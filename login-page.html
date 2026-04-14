@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoBank | Secure Access</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="mycode.css"> 
+    <style>
+        /* Ensures your background image loads correctly via XAMPP */
+        .home-theme {
+            background-image: url('img/home-page-banking.png') !important;
+            background-size: cover;
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+<body class="home-theme">
+
+<div class="container-fluid vh-100">
+    <div class="row h-100">
+        
+        <div class="col-md-5 d-none d-md-flex flex-column justify-content-between p-5 text-white panel-left" style="background: rgba(12, 31, 63, 0.95);">
+            <div>
+                <a class="navbar-brand" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; letter-spacing: -1px; font-size: 1.5rem;">NEO BANK</a>                
+                <p class="opacity-50 mt-3 text-gold" style="color: #C9A84C;">Banking with confidence and clarity.</p>
+            </div>
+            
+            <ul class="list-unstyled">
+                <li class="py-2 border-top border-secondary small">● 256-bit encrypted transactions</li>
+                <li class="py-2 border-top border-secondary small">● Instant account creation</li>
+                <li class="py-2 border-top border-secondary small">● Instant fund transfers</li>
+            </ul>
+            
+            <p class="small opacity-25">© 2026 NEOBANK · FDIC MEMBER</p>
+        </div>
+
+        <div class="col-md-7 d-flex align-items-center justify-content-center bg-light">
+            <div class="card border-0 shadow-lg p-4" style="width: 100%; max-width: 450px; border-radius: 12px;">
+                
+                <ul class="nav nav-pills nav-justified mb-4" id="pills-tab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="tab-login" data-toggle="pill" href="#pane-login">Sign In</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tab-signup" data-toggle="pill" href="#pane-signup">Open Account</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="pane-login">
+                        <form action="login.php" method="POST">
+                            <h3 style="font-family: 'Cormorant Garamond';">Welcome back.</h3>
+                            <p class="text-muted small mb-4">Sign in to access your account</p>
+                            
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-uppercase">Email</label>
+                                <input type="email" name="l-email" class="form-control bg-light" placeholder="you@example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-uppercase">Password</label>
+                                <input type="password" name="l-pass" class="form-control bg-light" placeholder="••••••••" required>
+                            </div>
+                            <button type="submit" class="btn btn-block text-white py-2" style="background: #0C1F3F;">Sign In</button>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="pane-signup">
+                        <form action="signup.php" method="POST">
+                            <h3 style="font-family: 'Cormorant Garamond';">Open an account.</h3>
+                            <p class="text-muted small mb-4">Get started in under a minute</p>
+                            
+                            <div class="row">
+                                <div class="col-6 form-group">
+                                    <label class="small font-weight-bold text-uppercase">First Name</label>
+                                    <input type="text" name="s-fname" class="form-control bg-light" required>
+                                </div>
+                                <div class="col-6 form-group">
+                                    <label class="small font-weight-bold text-uppercase">Last Name</label>
+                                    <input type="text" name="s-lname" class="form-control bg-light" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-uppercase">Email</label>
+                                <input type="email" name="s-email" class="form-control bg-light" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-uppercase">Password</label>
+                                <input type="password" name="s-pass" class="form-control bg-light" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-uppercase">Opening Deposit (Rs.)</label>
+                                <input type="number" name="s-dep" class="form-control bg-light" placeholder="Min. 1000" min="1000" required>
+                            </div>
+                            <button type="submit" class="btn btn-block text-white py-2" style="background: #0C1F3F;">Create Account</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- this code is used to show pop up if a user is not logged in -->
+<script>
+    // Check the URL for "?error=must_login"
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('error')) {
+        alert("Please Login or Create an Account first to access your Dashboard!");
+        
+        // Optional: Automatically switch the tab to "Sign In"
+        $('#tab-login').tab('show');
+    }
+
+</script>
+</body>
+</html>

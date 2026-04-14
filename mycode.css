@@ -1,0 +1,154 @@
+/* 1. GLOBAL FIX: This kills the horizontal scroll once and for all */
+body, html {
+    overflow-x: hidden; 
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Your Red Line at the top */
+.my-own-red {
+    background-color: #002147 !important;
+    min-height: 10px; 
+}
+
+/* Your Main White Navbar */
+.my-own-red1 {
+    background-color: #FFF6F6 !important;
+}
+
+/* This targets the actual <body> tag */
+.home-theme {
+    background-color: #e2f1f4 !important; 
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; 
+}
+
+/* THE CONTAINER: You MUST add this to the div holding the spiral! */
+.container.position-relative {
+    overflow: hidden; /* This acts like a 'clip' for the spiral */
+}
+
+/* FIXED FOOTER: Combined your two rules */
+footer {
+    background-color: #275665 !important;
+    position: relative;
+    z-index: 10;
+    margin-top: auto; /* This keeps it at the bottom of the page */
+    padding: 20px 0;   /* Adding some padding makes it look more 'Neo' */
+}
+
+/* Text Styles */
+h1 {
+    margin-bottom: 2px;
+}
+
+h1, h2, .navbar-brand {
+    color: #ffffff;
+    text-shadow: 2px 2px 4px #002147;
+}
+
+/* Updated Background Layer */
+.bg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Use min-height instead of height to ensure it stretches with text */
+    min-height: 85vh; 
+    z-index: -1;
+    
+    /* This is the magic trick: 'cover' ensures the image fills the area 
+       without stretching, and 'fixed' keeps it steady while scrolling */
+    background: linear-gradient(rgba(226, 241, 244, 0.4), rgba(226, 241, 244, 1)), 
+                url('img/home-page-banking.png');
+    background-size: cover;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* Fixed your double .png naming error here */
+.bg-layer {
+  opacity: 0.5; 
+}
+
+   /* this part is for the login page */
+/* Custom Pills Styling */
+.nav-pills .nav-link {
+    color: #ADAAA2;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #E8E6E0;
+    border-radius: 0;
+}
+
+.nav-pills .nav-link.active {
+    background: transparent !important;
+    color: #0C1F3F !important;
+    border-bottom: 2px solid #0C1F3F;
+}
+
+/* Input Focus Glow */
+.form-control:focus {
+    box-shadow: none;
+    border-color: #185FA5;
+    background: #fff !important;
+}
+
+.vh-100 { height: 100vh; }
+
+/* THE GRID BACKGROUND: Recreates the luxury pattern */
+.panel-left {
+    background: #0C1F3F; /* Your Navy */
+    position: relative;
+    overflow: hidden;
+}
+
+/* This creates the thin white grid lines */
+.panel-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+}
+
+/* THE SLANTED GOLD LINE: That signature accent */
+.panel-left::after {
+    content: '';
+    position: absolute;
+    top: -10%;
+    right: -5%;
+    width: 2px;
+    height: 130%;
+    background: linear-gradient(to bottom, transparent, #C9A84C 30%, #C9A84C 70%, transparent);
+    transform: rotate(-8deg);
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* Fix for the features list spacing */
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.text-gold {
+    color: #C9A84C !important;
+}
+
+/* This overrides the default Bootstrap hover behavior */
+.btn-outline-dark {
+    background-color: #ffffff !important; /* Your Navy Blue */
+    border-color: #0b0355 !important;
+    color: #caa132 !important; /* Your Gold text on hover */
+}
