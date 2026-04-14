@@ -32,7 +32,7 @@ session_start();
 
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item"><a class="nav-link" href="home-page.php">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="home-page.php">home</a></li>
                 <li class="nav-item"><a class="nav-link" href="check_access.php?page=dashboard">Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="check_access.php?page=history">Transaction History</a></li>
                 
