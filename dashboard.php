@@ -5,25 +5,33 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 include 'db.php';
-$user_id    = mysqli_real_escape_string($conn, $_SESSION['user_id']);
-$result     = mysqli_query($conn, "SELECT * FROM users WHERE id = '$user_id'");
-$user       = mysqli_fetch_assoc($result);
-$balance    = isset($user['balance'])    ? (float)$user['balance']              : 0;
+
+$user_id = mysqli_real_escape_string($conn, $_SESSION['user_id']);
+$result  = mysqli_query($conn, "SELECT * FROM users WHERE id = '$user_id'");
+$user    = mysqli_fetch_assoc($result);
+
+// FIX: This prevents the "Undefined array key" error. 
+// It uses 'balance' if available, otherwise it falls back to 'opening_deposit'.
+$balance = isset($user['balance']) && $user['balance'] > 0 
+           ? (float)$user['balance'] 
+           : (float)($user['opening_deposit'] ?? 0);
+
 $first_name = isset($user['first_name']) ? htmlspecialchars($user['first_name']) : 'User';
+$acc_no     = isset($user['account_no']) ? htmlspecialchars($user['account_no']) : 'N/A'; 
 $send_msg = '';
 
-
-
+// --- SEND MONEY LOGIC ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send') {
     $to_acc = mysqli_real_escape_string($conn, trim($_POST['to_account'] ?? ''));
     $amount = (float)($_POST['amount'] ?? 0);
-    $note   = mysqli_real_escape_string($conn, trim($_POST['note'] ?? ''));
+    
     if ($amount <= 0) {
         $send_msg = ['type' => 'error', 'text' => 'Enter a valid amount.'];
     } elseif ($amount > $balance) {
         $send_msg = ['type' => 'error', 'text' => 'Insufficient balance.'];
     } else {
-        $rec = mysqli_query($conn, "SELECT * FROM users WHERE account_number = '$to_acc'");
+        // Search using 'account_no' to match signup.php
+        $rec = mysqli_query($conn, "SELECT * FROM users WHERE account_no = '$to_acc'");
         if (!$rec || mysqli_num_rows($rec) === 0) {
             $send_msg = ['type' => 'error', 'text' => 'Recipient account not found.'];
         } else {
@@ -31,23 +39,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             if ($recipient['id'] == $user_id) {
                 $send_msg = ['type' => 'error', 'text' => 'You cannot send money to yourself.'];
             } else {
+                // Update both users (Sender and Receiver)
                 mysqli_query($conn, "UPDATE users SET balance = balance - $amount WHERE id = '$user_id'");
                 mysqli_query($conn, "UPDATE users SET balance = balance + $amount WHERE id = '{$recipient['id']}'");
-                $send_msg = ['type' => 'success', 'text' => "₹" . number_format($amount, 2) . " sent to {$recipient['first_name']} successfully!"];
+                
+                // Record for the Live Activity section
+                mysqli_query($conn, "INSERT INTO transactions (user_id, type, amount, description) 
+                                     VALUES ('$user_id', 'debit', $amount, 'Sent to {$recipient['first_name']}')");
+                
+                $send_msg = ['type' => 'success', 'text' => "₹" . number_format($amount, 2) . " sent successfully!"];
                 $balance -= $amount;
             }
         }
     }
 }
+
+// --- REQUEST MONEY LOGIC ---
 $req_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'request') {
     $from_acc = mysqli_real_escape_string($conn, trim($_POST['from_account'] ?? ''));
     $amount   = (float)($_POST['amount'] ?? 0);
-    $reason   = mysqli_real_escape_string($conn, trim($_POST['reason'] ?? ''));
+    
     if ($amount <= 0) {
         $req_msg = ['type' => 'error', 'text' => 'Enter a valid amount.'];
     } else {
-        $rec = mysqli_query($conn, "SELECT * FROM users WHERE account_number = '$from_acc'");
+        $rec = mysqli_query($conn, "SELECT * FROM users WHERE account_no = '$from_acc'");
+        
         if (!$rec || mysqli_num_rows($rec) === 0) {
             $req_msg = ['type' => 'error', 'text' => 'Account not found.'];
         } else {
@@ -56,11 +73,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $req_msg = ['type' => 'error', 'text' => 'You cannot request from yourself.'];
             } else {
                 $req_msg = ['type' => 'success', 'text' => "Request for ₹" . number_format($amount, 2) . " sent to {$from_user['first_name']}!"];
+                
+                // Add to history as a pending-style entry
+                mysqli_query($conn, "INSERT INTO transactions (user_id, type, amount, description) 
+                                     VALUES ('$user_id', 'credit', 0, 'Requested ₹$amount from {$from_user['first_name']}')");
             }
         }
     }
 }
+
+// --- DEPOSIT MONEY LOGIC ---
+$dep_msg = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'deposit') {
+    $amount = (float)($_POST['amount'] ?? 0);
+    
+    if ($amount <= 0) {
+        $dep_msg = ['type' => 'error', 'text' => 'Please enter a valid amount.'];
+    } else {
+        // Update the user's balance
+        $update_query = "UPDATE users SET balance = balance + $amount WHERE id = '$user_id'";
+        
+        if (mysqli_query($conn, $update_query)) {
+            // Record the transaction so it shows in Live Activity
+            mysqli_query($conn, "INSERT INTO transactions (user_id, type, amount, description) 
+                                 VALUES ('$user_id', 'credit', $amount, 'Self Deposit')");
+            
+            $dep_msg = ['type' => 'success', 'text' => "₹" . number_format($amount, 2) . " deposited successfully!"];
+            $balance += $amount; // Update the variable so the animated counter shows the new total
+        } else {
+            $dep_msg = ['type' => 'error', 'text' => 'Database error. Please try again.'];
+        }
+    }
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -213,6 +259,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); display: flex;
     <div class="sb-logo">NEO BANK</div>
     <nav class="sb-nav">
         <button class="sb-link active" onclick="location.reload()"><i class="fas fa-th-large"></i> Dashboard</button>
+         <a href="home-page.php" class="sb-link"><i class="fas fa-home"></i> Home</a>
         <a href="history.php" class="sb-link"><i class="fas fa-history"></i> History</a>
         <a href="#" class="sb-link"><i class="fas fa-user-circle"></i> Profile</a>
         <a href="#" class="sb-link"><i class="fas fa-cog"></i> Settings</a>
@@ -309,6 +356,26 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); display: flex;
     </div>
 </main>
 
+<div id="depositModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-university"></i> Deposit Funds</h3>
+            <button class="close-btn" onclick="closeModal('depositModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="POST">
+                <input type="hidden" name="action" value="deposit">
+                <div class="form-group">
+                    <label>Amount to Add (₹)</label>
+                    <input type="number" name="amount" class="form-control" placeholder="0.00" required min="1" step="0.01">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">
+                    Confirm Deposit
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 <div class="modal-overlay" id="sendModal">
     <div class="modal">
         <button class="modal-close" onclick="closeModal('sendModal')"><i class="fas fa-times-circle"></i></button>
@@ -320,6 +387,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); display: flex;
             <i class="fas fa-<?php echo $send_msg['type']==='success'?'check-circle':'exclamation-circle'; ?>"></i>
             <?php echo $send_msg['text']; ?>
         </div>
+        <?php if (!empty($dep_msg)): ?>
+    <div class="alert alert-<?php echo $dep_msg['type']; ?>">
+        <?php echo $dep_msg['text']; ?>
+    </div>
+<?php endif; ?>
         <?php endif; ?>
         <form method="POST" action="#sendModal">
             <input type="hidden" name="action" value="send">
@@ -408,10 +480,18 @@ const s = performance.now();
 })(performance.now());
 
 function openModal(type) {
-    const map = { send: 'sendModal', request: 'requestModal', deposit: 'depositModal' };
-    document.getElementById(map[type]).classList.add('open');
-    document.body.style.overflow = 'hidden';
+    const map = { 
+        send: 'sendModal', 
+        request: 'requestModal', 
+        deposit: 'depositModal' // Make sure this line is exactly like this
+    };
+    const modalId = map[type];
+    if(modalId) {
+        document.getElementById(modalId).classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
 }
+
 function closeModal(id) {
     document.getElementById(id).classList.remove('open');
     document.body.style.overflow = '';
