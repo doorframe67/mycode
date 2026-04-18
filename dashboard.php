@@ -72,17 +72,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             if ($from_user['id'] == $user_id) {
                 $req_msg = ['type' => 'error', 'text' => 'You cannot request from yourself.'];
             } else {
-                $req_msg = ['type' => 'success', 'text' => "Request for ₹" . number_format($amount, 2) . " sent to {$from_user['first_name']}!"];
-                
-                // Add to history as a pending-style entry
+                // 1. Record for YOU (The Requester)
                 mysqli_query($conn, "INSERT INTO transactions (user_id, type, amount, description) 
                                      VALUES ('$user_id', 'credit', 0, 'Requested ₹$amount from {$from_user['first_name']}')");
+
+                // 2. Record for YOUR FRIEND (The Person being requested)
+                // This is the line that was likely missing or had the wrong ID
+                $friend_id = $from_user['id'];
+                mysqli_query($conn, "INSERT INTO transactions (user_id, type, amount, description) 
+                                     VALUES ('$friend_id', 'debit', 0, '{$user['first_name']} requested ₹$amount from you')");
+                
+                $req_msg = ['type' => 'success', 'text' => "Request for ₹" . number_format($amount, 2) . " sent to {$from_user['first_name']}!"];
             }
         }
     }
 }
 
-// --- DEPOSIT MONEY LOGIC ---
+    // --- DEPOSIT MONEY LOGIC ---
 $dep_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'deposit') {
     $amount = (float)($_POST['amount'] ?? 0);
@@ -273,7 +279,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); display: flex;
     <header class="header">
         <div>
             <h2>Namaste, <?php echo $first_name; ?>!</h2>
-            <small style="color: gray;">YOUR ACCOUNT NUMBER: NEO-8829-10</small>
+            <small style="color: gray;">YOUR ACCOUNT NUMBER: <?php echo $acc_no; ?></small>
             <p>Banking Reimagined for the Digital Age</p>
         </div>
         <div class="balance-pill">
@@ -356,24 +362,28 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); display: flex;
     </div>
 </main>
 
-<div id="depositModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fas fa-university"></i> Deposit Funds</h3>
-            <button class="close-btn" onclick="closeModal('depositModal')">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form method="POST">
-                <input type="hidden" name="action" value="deposit">
-                <div class="form-group">
-                    <label>Amount to Add (₹)</label>
-                    <input type="number" name="amount" class="form-control" placeholder="0.00" required min="1" step="0.01">
-                </div>
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">
-                    Confirm Deposit
-                </button>
-            </form>
-        </div>
+<div class="modal-overlay" id="depositModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('depositModal')"><i class="fas fa-times-circle"></i></button>
+        <div class="modal-stripe" style="background:var(--gold)"></div>
+        <div class="modal-title" style="color:var(--gold)">Deposit Funds</div>
+        <div class="modal-sub">Add money to your wallet instantly.</div>
+        
+        <?php if (!empty($dep_msg)): ?>
+            <div class="alert <?php echo $dep_msg['type']; ?>">
+                <i class="fas fa-<?php echo $dep_msg['type']==='success'?'check-circle':'exclamation-circle'; ?>"></i>
+                <?php echo $dep_msg['text']; ?>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="deposit">
+            <div class="form-group">
+                <label class="form-label">Amount to Add (₹)</label>
+                <input type="number" name="amount" class="form-input" placeholder="0.00" min="1" step="0.01" required>
+            </div>
+            <button type="submit" class="form-btn" style="background:var(--gold)">Confirm Deposit</button>
+        </form>
     </div>
 </div>
 <div class="modal-overlay" id="sendModal">
@@ -504,6 +514,7 @@ document.addEventListener('keydown', e => {
 });
 <?php if (!empty($send_msg)): ?>document.getElementById('sendModal').classList.add('open');<?php endif; ?>
 <?php if (!empty($req_msg)):  ?>document.getElementById('requestModal').classList.add('open');<?php endif; ?>
+<?php if (!empty($dep_msg)): ?>document.getElementById('depositModal').classList.add('open');<?php endif; ?>
 
 function toggleChat() {
     const w = document.getElementById('chatWindow');
